@@ -11,6 +11,7 @@ type model struct{
 	width int
 	height int
 	logs []string
+	offset int
 }
 
 func (m model) Init() tea.Cmd {
@@ -20,8 +21,14 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
+		switch msg.String() {
+		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "j", "down":
+			maxOffset := max(0, len(m.logs) - m.bodyHeight())
+			m.offset = min(maxOffset, m.offset + 1)
+		case "k", "up":
+			m.offset = max(0, m.offset - 1)
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -52,15 +59,19 @@ func (m model) View() string {
 	footerStyle := lipgloss.NewStyle().Bold(true).Background(lipgloss.Color("#7D56F4")).Foreground(lipgloss.Color("#767676")).Width(m.width)
 	footer := footerStyle.Render("q quit")
 
-	bodyHeight := m.height - lipgloss.Height(header) - lipgloss.Height(footer)
+	bodyHeight := m.bodyHeight()
 	bodyStyle := lipgloss.NewStyle().Height(bodyHeight)
 
-	end := min(bodyHeight, len(m.logs))
-	visible := m.logs[0:end]
+	end := min(m.offset + bodyHeight, len(m.logs))
+	visible := m.logs[m.offset:end]
 
 	body := bodyStyle.Render(strings.Join(visible, "\n"))
 
 	return lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
+}
+
+func (m model) bodyHeight() int {
+	return max(0, m.height - 2)
 }
 
 func main() {
