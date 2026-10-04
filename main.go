@@ -38,12 +38,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.offset = min(m.maxOffset(), m.offset + 1)
 		case "k", "up":
 			m.offset = max(0, m.offset - 1)
-		case "G", "g":
+		case "g":
+			m.offset = 0
+		case "G":
 			m.offset = m.maxOffset()
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.offset = min(m.offset, m.maxOffset())
 	case tickMsg:
 		line := fmt.Sprintf("%s line %d: new event", time.Time(msg).Format("15:04:05"), len(m.logs))
 		atBottom := m.offset == m.maxOffset()
@@ -83,7 +86,8 @@ func (m model) View() string {
 	if m.offset == m.maxOffset() {
 		status = "FOLLOWING"
 	}
-	footer := footerStyle.Render(status, "q quit")
+	footerText := fmt.Sprintf("%s · %d lines · q quit" , status, len(m.logs))
+	footer := footerStyle.Render(footerText)
 
 	bodyHeight := m.bodyHeight()
 	bodyStyle := lipgloss.NewStyle().Height(bodyHeight)
