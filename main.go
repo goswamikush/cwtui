@@ -2,6 +2,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -14,8 +15,17 @@ type model struct{
 	offset int
 }
 
+type tickMsg time.Time
+
+func tick() tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(500 * time.Millisecond)
+		return tickMsg(time.Now())
+	}
+}
+
 func (m model) Init() tea.Cmd {
-	return nil
+	return tick()
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -33,7 +43,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+	case tickMsg:
+		line := fmt.Sprintf("%s line %d: new event", time.Time(msg).Format("15:04:05"), len(m.logs))
+		m.logs = append(m.logs, line)
+		return m, tick()
 	}
+
 	return m, nil
 }
 
