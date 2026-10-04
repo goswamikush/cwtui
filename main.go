@@ -35,8 +35,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "j", "down":
-			maxOffset := max(0, len(m.logs) - m.bodyHeight())
-			m.offset = min(maxOffset, m.offset + 1)
+			m.offset = min(m.maxOffset(), m.offset + 1)
 		case "k", "up":
 			m.offset = max(0, m.offset - 1)
 		}
@@ -45,7 +44,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 	case tickMsg:
 		line := fmt.Sprintf("%s line %d: new event", time.Time(msg).Format("15:04:05"), len(m.logs))
+		atBottom := m.offset == m.maxOffset()
 		m.logs = append(m.logs, line)
+
+		if atBottom {
+			m.offset = m.maxOffset()
+		}
 		return m, tick()
 	}
 
@@ -87,6 +91,10 @@ func (m model) View() string {
 
 func (m model) bodyHeight() int {
 	return max(0, m.height - 2)
+}
+
+func (m model) maxOffset() int {
+	return max(0, len(m.logs) - m.bodyHeight())
 }
 
 func main() {
