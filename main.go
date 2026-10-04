@@ -38,6 +38,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.offset = min(m.maxOffset(), m.offset + 1)
 		case "k", "up":
 			m.offset = max(0, m.offset - 1)
+		case "G", "g":
+			m.offset = m.maxOffset()
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -68,6 +70,8 @@ func initialModel() model {
 }
 
 func (m model) View() string {
+	status := "PAUSED"
+
 	if m.width == 0 {
 		return "loading..."
 	}
@@ -76,7 +80,10 @@ func (m model) View() string {
 	header := headerStyle.Render("cwtail")
 
 	footerStyle := lipgloss.NewStyle().Bold(true).Background(lipgloss.Color("#7D56F4")).Foreground(lipgloss.Color("#767676")).Width(m.width)
-	footer := footerStyle.Render("q quit")
+	if m.offset == m.maxOffset() {
+		status = "FOLLOWING"
+	}
+	footer := footerStyle.Render(status, "q quit")
 
 	bodyHeight := m.bodyHeight()
 	bodyStyle := lipgloss.NewStyle().Height(bodyHeight)
